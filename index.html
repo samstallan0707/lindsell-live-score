@@ -19,7 +19,6 @@
 html,body{
   width:100%;
   height:100%;
-  height:100dvh;
   margin:0;
   overflow:hidden;
   background:#020403;
@@ -30,7 +29,6 @@ body{display:flex;align-items:center;justify-content:center}
 .scoreboard{
   width:100vw;
   height:100vh;
-  height:100dvh;
   position:relative;
   overflow:hidden;
   display:grid;
@@ -492,10 +490,431 @@ body{display:flex;align-items:center;justify-content:center}
 }
 
 
-:root{ --vvh:100dvh; }
-@supports (height: 100dvh){
-  .scoreboard{ height:var(--vvh); }
-  html,body{ height:var(--vvh); }
+/* ===== v11.4 PHONE LANDSCAPE FIX =====
+   Desktop keeps the exact original TV CSS.
+   Only short landscape screens use a fixed 1920x1080 canvas, then scale
+   the complete canvas proportionally to the visible Safari viewport.
+*/
+@media (orientation: landscape) and (max-height: 600px) {
+
+:root{
+  --green:#039C43;
+  --gold:#d8ad39;
+  --white:#ffffff;
+  --muted:#b9c2bd;
+  --panel:rgba(255,255,255,.045);
+  --line:rgba(255,255,255,.10);
+  --bg1:#07100b;
+  --bg2:#020403;
+}
+*{box-sizing:border-box}
+html,body{
+  width:100%;
+  height:100%;
+  margin:0;
+  overflow:hidden;
+  background:#020403;
+  font-family:"Arial Narrow",Arial,Helvetica,sans-serif;
+  color:var(--white);
+}
+body{display:flex;align-items:center;justify-content:center}
+.scoreboard{
+  width:1920px;
+  height:1080px;
+  position:fixed;
+  left:50%;
+  top:50%;
+  transform-origin:center center;
+  overflow:hidden;
+  display:grid;
+  grid-template-rows:75.6000px 691.2000px 183.6000px 129.6000px;
+  background:
+    radial-gradient(circle at 50% 105%,rgba(3,156,67,.12),transparent 46%),
+    linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 100%);
+}
+.topbar{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-bottom:1px solid var(--line);
+}
+.fixture{
+  display:flex;
+  align-items:center;
+  gap:26.8800px;
+  font-size:32.6400px;
+  font-weight:900;
+  letter-spacing:.08em;
+  white-space:nowrap;
+}
+.fixture-v{
+  color:var(--gold);
+  font-size:26.8800px;
+}
+.main-area{
+  display:grid;
+  grid-template-columns:20% 60% 20%;
+  align-items:stretch;
+  padding:8.6400px 49.9200px 17.2800px;
+  gap:23.0400px;
+}
+.batter-side{
+  align-self:end;
+  transform:translateY(-64.8000px);
+  position:relative;
+  height:47%;
+  min-height:0;
+  padding:15.1200px 34.5600px 0;
+  background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.018));
+  display:grid;
+  grid-template-rows:auto auto auto;
+  align-content:end;
+  row-gap:8.6400px;
+  overflow:hidden;
+}
+.left-batter{border-left:8.6400px solid var(--gold)}
+.right-batter{
+  border-right:8.6400px solid var(--green);
+  transform:translateY(-64.8000px) translateX(-19.2000px);
+}
+.batter-name{
+  font-size:40.3200px;
+  font-weight:900;
+  letter-spacing:.02em;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:clip;
+  max-width:100%;
+}
+.batter-balls{
+  margin-top:0;
+  margin-bottom:5.4000px;
+  color:var(--muted);
+  font-size:19.2000px;
+  font-weight:800;
+  letter-spacing:.05em;
+}
+.batter-score{
+  align-self:end;
+  justify-self:center;
+  font-size:203.5200px;
+  line-height:.82;
+  font-weight:900;
+  letter-spacing:-.04em;
+  margin-top:0;
+}
+
+/* Move batter name, balls and score upward inside the box only */
+.batter-name,
+.batter-balls,
+.batter-score{
+  transform:translateY(-16pt);
+}
+.score-centre{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-width:0;
+}
+.batting-team{
+  margin-bottom:12.9600px;
+  transform:translateY(-86.4000px);
+  color:var(--gold);
+  font-size:32.6400px;
+  font-weight:900;
+  letter-spacing:.05em;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:90%;
+}
+.main-score{
+  font-size:393.6000px;
+  transform:translateY(-54.0000px);
+  line-height:.72;
+  font-weight:900;
+  letter-spacing:-.055em;
+  white-space:nowrap;
+}
+.overs{
+  margin-top:21.6000px;
+  transform:translateY(43.2000px);
+  color:var(--muted);
+  font-size:105.6000px;
+  line-height:1;
+  font-weight:900;
+  letter-spacing:.04em;
+  white-space:nowrap;
+}
+.info-row{
+  display:grid;
+  grid-template-columns:22% 56% 22%;
+  gap:26.8800px;
+  padding:0 49.9200px 11.8800px;
+}
+.bowler-box,
+.projection-box{
+  background:var(--panel);
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+}
+.bowler-box{
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:center;
+  padding:0 34.5600px;
+  border-left:6.7200px solid var(--green);
+}
+.bowler-left{
+  display:flex;
+  align-items:center;
+  gap:19.2000px;
+  min-width:0;
+}
+.gold-label{
+  color:var(--gold);
+  font-size:15.3600px;
+  font-weight:900;
+  letter-spacing:.11em;
+  white-space:nowrap;
+}
+.bowler-name{
+  font-size:31.6800px;
+  font-weight:900;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.bowler-figures-wrap{
+  text-align:right;
+}
+.bowler-figures{
+  font-size:31.6800px;
+  font-weight:900;
+  letter-spacing:.02em;
+}
+.projection-box{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+.projection-footer{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+.projection-main{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  background:var(--panel);
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  border-right:6.7200px solid var(--gold);
+  width:calc(100% - 28.8000px);
+}
+.partnership-main{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  background:var(--panel);
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  border-left:6.7200px solid var(--gold);
+}
+.partnership-value{
+  margin-top:3.2400px;
+  color:var(--gold);
+  font-size:57.6000px;
+  line-height:1;
+  font-weight:900;
+}
+.bowler-footer{
+  position:relative;
+  display:block;
+  padding:0 28.8000px;
+}
+.bowler-identity{
+  position:absolute;
+  left:28.8000px;
+  top:12.9600px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:4.8600px;
+  min-width:0;
+}
+.bowler-identity .bowler-name{
+  font-size:31.6800px;
+}
+.bowler-figures-centre{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  font-size:61.4400px;
+  font-weight:900;
+  letter-spacing:.04em;
+  white-space:nowrap;
+}
+.projection-value{
+  margin-top:3.2400px;
+  font-size:115.2000px;
+  line-height:1;
+  font-weight:900;
+}
+.footer{
+  display:grid;
+  grid-template-columns:22% 78%;
+  gap:26.8800px;
+  padding:0 49.9200px 8.6400px;
+}
+.footer-card{
+  background:var(--panel);
+  border-top:3.7800px solid var(--green);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+.gold-card{border-top-color:var(--gold)}
+.footer-label{
+  color:var(--muted);
+  font-size:17.2800px;
+  font-weight:900;
+  letter-spacing:.12em;
+}
+.footer-value{
+  margin-top:4.8600px;
+  font-weight:900;
+}
+.small-value{font-size:41.2800px}
+.gold-value{color:var(--gold)}
+.over-card{
+  flex-direction:column;
+  gap:9.1800px;
+}
+.over-card .gold-label{
+  font-size:20.1600px;
+}
+.ball-row{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10.5600px;
+  max-width:95%;
+}
+.ball{
+  width:47.0400px;
+  height:47.0400px;
+  min-width:47.0400px;
+  border-radius:4px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(255,255,255,.055);
+  border:1px solid rgba(255,255,255,.14);
+  font-size:24.0000px;
+  font-weight:900;
+}
+.ball.wicket{
+  color:#e33;
+  border-color:rgba(227,51,51,.55);
+}
+.ball.boundary{
+  color:var(--green);
+  border-color:rgba(3,156,67,.45);
+}
+
+/* WIDE / NO-BALL BOXES */
+.ball.wide,
+.ball.noball{
+  width:60.4800px;
+  height:60.4800px;
+  min-width:60.4800px;
+  flex-direction:column;
+  line-height:1;
+  gap:2.3040px;
+  overflow:hidden;
+}
+
+.ball.wide{
+  border-color:rgba(70,145,255,.95);
+  background:rgba(50,105,190,.22);
+}
+
+.ball.noball{
+  border-color:rgba(165,90,255,.95);
+  background:rgba(110,55,175,.22);
+}
+
+.ball .extra-code{
+  display:block;
+  font-size:20.1600px;
+  line-height:1;
+  font-weight:900;
+  color:#fff;
+}
+
+.ball .extra-runs{
+  display:block;
+  font-size:17.6640px;
+  line-height:1;
+  font-weight:900;
+  color:#fff;
+}
+
+.over-card.compact .ball.wide,
+.over-card.compact .ball.noball{
+  width:48.9600px;
+  height:48.9600px;
+  min-width:48.9600px;
+}
+
+.over-card.ultra-compact .ball.wide,
+.over-card.ultra-compact .ball.noball{
+  width:40.3200px;
+  height:40.3200px;
+  min-width:40.3200px;
+}
+.over-card.compact .ball-row{gap:6.7200px}
+.over-card.compact .ball{width:38.4000px;height:38.4000px;min-width:38.4000px;font-size:19.2000px}
+.over-card.ultra-compact .ball-row{gap:4.8000px}
+.over-card.ultra-compact .ball{width:31.6800px;height:31.6800px;min-width:31.6800px;font-size:15.7440px}
+.watermark{
+  position:absolute;
+  right:15.3600px;
+  bottom:3.7800px;
+  color:rgba(255,255,255,.10);
+  font-size:11.9040px;
+  font-weight:800;
+  letter-spacing:.06em;
+}
+
+
+  html,body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+  }
+
+  body{
+    display:block;
+  }
+
+  #scoreboardRoot{
+    width:1920px;
+    height:1080px;
+    position:fixed;
+    left:50%;
+    top:50%;
+    transform-origin:center center;
+  }
 }
 
 </style>
@@ -757,18 +1176,31 @@ function render(){
 }
 
 
-function syncVisibleViewport(){
-  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-  document.documentElement.style.setProperty("--vvh", `${h}px`);
-}
+function fitPhoneLandscapeScoreboard(){
+  const board = document.getElementById("scoreboardRoot");
+  if(!board) return;
 
-syncVisibleViewport();
-window.addEventListener("resize",syncVisibleViewport);
-window.addEventListener("orientationchange",()=>{
-  setTimeout(syncVisibleViewport,250);
-});
-if(window.visualViewport){
-  window.visualViewport.addEventListener("resize",syncVisibleViewport);
+  const isPhoneLandscape =
+    window.matchMedia("(orientation: landscape) and (max-height: 600px)").matches;
+
+  if(!isPhoneLandscape){
+    /* Desktop/tablet: preserve the original TV design exactly. */
+    board.style.transform = "";
+    board.style.left = "";
+    board.style.top = "";
+    return;
+  }
+
+  const viewport = window.visualViewport;
+  const w = viewport ? viewport.width : window.innerWidth;
+  const h = viewport ? viewport.height : window.innerHeight;
+
+  const scale = Math.min(w / 1920, h / 1080);
+
+  board.style.left = "50%";
+  board.style.top = "50%";
+  board.style.transform =
+    `translate(-50%, -50%) scale(${scale})`;
 }
 
 /* ============================================================
@@ -851,6 +1283,7 @@ async function enterScoreboard(){
   launchLayer.hidden = true;
   scoreboardRoot.hidden = false;
   rotateLayer.hidden = !isPortraitPhone();
+  requestAnimationFrame(fitPhoneLandscapeScoreboard);
 }
 
 function updateOrientationOverlay(){
@@ -913,11 +1346,21 @@ launchButton.addEventListener("click",enterScoreboard);
 playCricketButton.addEventListener("click",()=>{
   window.location.href = onlineCfg.playCricketUrl || "https://lindsell.play-cricket.com/";
 });
-window.addEventListener("resize",updateOrientationOverlay);
+window.addEventListener("resize",()=>{
+  updateOrientationOverlay();
+  fitPhoneLandscapeScoreboard();
+});
 window.addEventListener("orientationchange",()=>{
-  setTimeout(updateOrientationOverlay,150);
+  setTimeout(()=>{
+    updateOrientationOverlay();
+    fitPhoneLandscapeScoreboard();
+  },250);
 });
 
+if(window.visualViewport){
+  window.visualViewport.addEventListener("resize",fitPhoneLandscapeScoreboard);
+}
+fitPhoneLandscapeScoreboard();
 fetchLiveScore();
 setInterval(fetchLiveScore,Math.max(2,Number(onlineCfg.pollSeconds || 3))*1000);
 
