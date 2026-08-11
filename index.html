@@ -19,6 +19,7 @@
 html,body{
   width:100%;
   height:100%;
+  height:100dvh;
   margin:0;
   overflow:hidden;
   background:#020403;
@@ -27,12 +28,9 @@ html,body{
 }
 body{display:flex;align-items:center;justify-content:center}
 .scoreboard{
-  width:1920px;
-  height:1080px;
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform-origin:center center;
+  width:100vw;
+  height:100vh;
+  height:100dvh;
   position:relative;
   overflow:hidden;
   display:grid;
@@ -493,6 +491,13 @@ body{display:flex;align-items:center;justify-content:center}
   #rotateLayer{display:none !important}
 }
 
+
+:root{ --vvh:100dvh; }
+@supports (height: 100dvh){
+  .scoreboard{ height:var(--vvh); }
+  html,body{ height:var(--vvh); }
+}
+
 </style>
 </head>
 <body>
@@ -751,6 +756,21 @@ function render(){
   }
 }
 
+
+function syncVisibleViewport(){
+  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  document.documentElement.style.setProperty("--vvh", `${h}px`);
+}
+
+syncVisibleViewport();
+window.addEventListener("resize",syncVisibleViewport);
+window.addEventListener("orientationchange",()=>{
+  setTimeout(syncVisibleViewport,250);
+});
+if(window.visualViewport){
+  window.visualViewport.addEventListener("resize",syncVisibleViewport);
+}
+
 /* ============================================================
    PUBLIC LIVE DATA
    ============================================================ */
@@ -801,7 +821,6 @@ function showStandby(){
 function showLiveReady(){
   liveAvailable = true;
   standbyLayer.hidden = true;
-  scaleScoreboard();
 
   if(viewerEnteredScoreboard){
     scoreboardRoot.hidden = false;
@@ -832,26 +851,6 @@ async function enterScoreboard(){
   launchLayer.hidden = true;
   scoreboardRoot.hidden = false;
   rotateLayer.hidden = !isPortraitPhone();
-  scaleScoreboard();
-}
-
-
-function scaleScoreboard(){
-  const board = document.getElementById("scoreboardRoot");
-  if(!board) return;
-
-  const designWidth = 1920;
-  const designHeight = 1080;
-
-  const availableWidth = window.innerWidth;
-  const availableHeight = window.innerHeight;
-
-  const scale = Math.min(
-    availableWidth / designWidth,
-    availableHeight / designHeight
-  );
-
-  board.style.transform = `translate(-50%, -50%) scale(${scale})`;
 }
 
 function updateOrientationOverlay(){
@@ -914,18 +913,11 @@ launchButton.addEventListener("click",enterScoreboard);
 playCricketButton.addEventListener("click",()=>{
   window.location.href = onlineCfg.playCricketUrl || "https://lindsell.play-cricket.com/";
 });
-window.addEventListener("resize",()=>{
-  updateOrientationOverlay();
-  scaleScoreboard();
-});
+window.addEventListener("resize",updateOrientationOverlay);
 window.addEventListener("orientationchange",()=>{
-  setTimeout(()=>{
-    updateOrientationOverlay();
-    scaleScoreboard();
-  },200);
+  setTimeout(updateOrientationOverlay,150);
 });
 
-scaleScoreboard();
 fetchLiveScore();
 setInterval(fetchLiveScore,Math.max(2,Number(onlineCfg.pollSeconds || 3))*1000);
 
