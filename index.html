@@ -27,8 +27,12 @@ html,body{
 }
 body{display:flex;align-items:center;justify-content:center}
 .scoreboard{
-  width:100vw;
-  height:100vh;
+  width:1920px;
+  height:1080px;
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform-origin:center center;
   position:relative;
   overflow:hidden;
   display:grid;
@@ -797,6 +801,7 @@ function showStandby(){
 function showLiveReady(){
   liveAvailable = true;
   standbyLayer.hidden = true;
+  scaleScoreboard();
 
   if(viewerEnteredScoreboard){
     scoreboardRoot.hidden = false;
@@ -827,6 +832,26 @@ async function enterScoreboard(){
   launchLayer.hidden = true;
   scoreboardRoot.hidden = false;
   rotateLayer.hidden = !isPortraitPhone();
+  scaleScoreboard();
+}
+
+
+function scaleScoreboard(){
+  const board = document.getElementById("scoreboardRoot");
+  if(!board) return;
+
+  const designWidth = 1920;
+  const designHeight = 1080;
+
+  const availableWidth = window.innerWidth;
+  const availableHeight = window.innerHeight;
+
+  const scale = Math.min(
+    availableWidth / designWidth,
+    availableHeight / designHeight
+  );
+
+  board.style.transform = `translate(-50%, -50%) scale(${scale})`;
 }
 
 function updateOrientationOverlay(){
@@ -889,11 +914,18 @@ launchButton.addEventListener("click",enterScoreboard);
 playCricketButton.addEventListener("click",()=>{
   window.location.href = onlineCfg.playCricketUrl || "https://lindsell.play-cricket.com/";
 });
-window.addEventListener("resize",updateOrientationOverlay);
+window.addEventListener("resize",()=>{
+  updateOrientationOverlay();
+  scaleScoreboard();
+});
 window.addEventListener("orientationchange",()=>{
-  setTimeout(updateOrientationOverlay,150);
+  setTimeout(()=>{
+    updateOrientationOverlay();
+    scaleScoreboard();
+  },200);
 });
 
+scaleScoreboard();
 fetchLiveScore();
 setInterval(fetchLiveScore,Math.max(2,Number(onlineCfg.pollSeconds || 3))*1000);
 
