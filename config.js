@@ -4,5 +4,5 @@ window.LINDSELL_ONLINE_CONFIG = {
   rowId: 1,
   staleAfterHours: 4,
   pollSeconds: 3,
-  playCricketUrl: "https://lindsell.play-cricket.com/Matches?tab=Result"
+  playCricketUrl: "https://lindsell.play-cricket.com/Matches?tab=Result&fixture_type=all"
 };
