@@ -917,6 +917,40 @@ body{display:flex;align-items:center;justify-content:center}
   }
 }
 
+
+.waiting-panel{
+  width:min(94vw,900px);
+}
+.waiting-fixture{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:18px;
+  margin:10px auto 24px;
+  flex-wrap:wrap;
+}
+.waiting-team{
+  font-size:clamp(22px,5vw,40px);
+  font-weight:900;
+  letter-spacing:.035em;
+  line-height:1.05;
+}
+.waiting-v{
+  color:var(--gold);
+  font-size:clamp(18px,4vw,28px);
+  font-weight:900;
+}
+.waiting-title{
+  font-size:clamp(30px,7vw,62px);
+}
+.waiting-meta{
+  margin-top:18px;
+  color:var(--gold);
+  font-size:clamp(13px,3vw,17px);
+  font-weight:900;
+  letter-spacing:.08em;
+}
+
 </style>
 </head>
 <body>
@@ -933,6 +967,24 @@ body{display:flex;align-items:center;justify-content:center}
       VIEW FIXTURES &amp; RESULTS ON PLAY-CRICKET
     </button>
     <div class="public-small">Live scores remain available through breaks and delays.</div>
+  </div>
+</div>
+
+
+<div class="public-layer" id="waitingLayer" hidden>
+  <div class="public-panel waiting-panel">
+    <div class="public-eyebrow">LINDSELL CC LIVE SCOREBOARD</div>
+    <div class="waiting-fixture">
+      <div class="waiting-team" id="waitingHomeTeam">LINDSELL CC</div>
+      <div class="waiting-v">v</div>
+      <div class="waiting-team" id="waitingAwayTeam">OPPOSITION CC</div>
+    </div>
+    <h1 class="public-title waiting-title">PLAY WAITING TO COMMENCE</h1>
+    <p class="public-copy">
+      Tonight's fixture has been connected. The live scoreboard will appear
+      automatically as soon as scoring begins.
+    </p>
+    <div class="waiting-meta" id="waitingMeta"></div>
   </div>
 </div>
 
@@ -1210,6 +1262,10 @@ function fitPhoneLandscapeScoreboard(){
 const onlineCfg = window.LINDSELL_ONLINE_CONFIG || {};
 const standbyLayer = document.getElementById("standbyLayer");
 const launchLayer = document.getElementById("launchLayer");
+const waitingLayer = document.getElementById("waitingLayer");
+const waitingHomeTeam = document.getElementById("waitingHomeTeam");
+const waitingAwayTeam = document.getElementById("waitingAwayTeam");
+const waitingMeta = document.getElementById("waitingMeta");
 const rotateLayer = document.getElementById("rotateLayer");
 const scoreboardRoot = document.getElementById("scoreboardRoot");
 const launchButton = document.getElementById("launchButton");
@@ -1242,8 +1298,34 @@ function showStandby(){
   viewerEnteredScoreboard = false;
   scoreboardRoot.hidden = true;
   launchLayer.hidden = true;
+  waitingLayer.hidden = true;
   rotateLayer.hidden = true;
   standbyLayer.hidden = false;
+
+  if(document.fullscreenElement && document.exitFullscreen){
+    document.exitFullscreen().catch(()=>{});
+  }
+}
+
+
+function showWaiting(score){
+  liveAvailable = false;
+  viewerEnteredScoreboard = false;
+  scoreboardRoot.hidden = true;
+  launchLayer.hidden = true;
+  rotateLayer.hidden = true;
+  standbyLayer.hidden = true;
+  waitingLayer.hidden = false;
+
+  const home = score?.homeTeam || "LINDSELL CC";
+  const away = score?.awayTeam || "OPPOSITION CC";
+  waitingHomeTeam.textContent = home;
+  waitingAwayTeam.textContent = away;
+
+  const bits = [];
+  if(score?.matchDate) bits.push(score.matchDate);
+  if(score?.matchTime) bits.push(score.matchTime);
+  waitingMeta.textContent = bits.join(" • ");
 
   if(document.fullscreenElement && document.exitFullscreen){
     document.exitFullscreen().catch(()=>{});
@@ -1253,6 +1335,7 @@ function showStandby(){
 function showLiveReady(){
   liveAvailable = true;
   standbyLayer.hidden = true;
+  waitingLayer.hidden = true;
 
   if(viewerEnteredScoreboard){
     scoreboardRoot.hidden = false;
@@ -1322,6 +1405,14 @@ async function fetchLiveScore(){
 
     if(!row || !row.score || ageHours(row.updated_at) >= staleAfter){
       showStandby();
+      return;
+    }
+
+    const state = String(row.score?.state || "live").toLowerCase();
+
+    if(state === "waiting"){
+      lastLiveUpdatedAt = row.updated_at;
+      showWaiting(row.score);
       return;
     }
 
