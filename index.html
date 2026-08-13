@@ -951,6 +951,73 @@ body{display:flex;align-items:center;justify-content:center}
   letter-spacing:.08em;
 }
 
+
+/* ===== v11.9 MATCH COMPLETE ===== */
+.completed-panel{
+  width:min(94vw,900px);
+  border-top-color:var(--gold);
+}
+.completed-fixture{
+  margin:4px auto 22px;
+  color:var(--muted);
+  font-size:clamp(13px,2.8vw,17px);
+  font-weight:900;
+  letter-spacing:.08em;
+}
+.completed-scores{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  align-items:center;
+  gap:18px;
+  margin:28px auto 18px;
+}
+.completed-team{
+  min-width:0;
+}
+.completed-team-name{
+  font-size:clamp(18px,4.5vw,34px);
+  font-weight:900;
+  line-height:1.05;
+  overflow-wrap:anywhere;
+}
+.completed-score{
+  margin-top:8px;
+  color:var(--gold);
+  font-size:clamp(42px,9vw,80px);
+  line-height:.95;
+  font-weight:900;
+  letter-spacing:-.04em;
+}
+.completed-overs{
+  margin-top:7px;
+  color:var(--muted);
+  font-size:clamp(12px,2.8vw,16px);
+  font-weight:800;
+}
+.completed-v{
+  color:var(--green);
+  font-size:clamp(18px,4vw,28px);
+  font-weight:900;
+}
+.completed-result{
+  margin:22px auto 0;
+  max-width:760px;
+  font-size:clamp(17px,4vw,27px);
+  line-height:1.2;
+  font-weight:900;
+}
+@media (max-width:620px){
+  .completed-scores{
+    grid-template-columns:1fr;
+    gap:11px;
+  }
+  .completed-v{display:none}
+  .completed-team{
+    padding:10px 0;
+    border-top:1px solid rgba(255,255,255,.08);
+  }
+}
+
 </style>
 </head>
 <body>
@@ -985,6 +1052,37 @@ body{display:flex;align-items:center;justify-content:center}
       automatically as soon as scoring begins.
     </p>
     <div class="waiting-meta" id="waitingMeta"></div>
+  </div>
+</div>
+
+
+<div class="public-layer" id="completedLayer" hidden>
+  <div class="public-panel completed-panel">
+    <div class="public-eyebrow">LINDSELL CC LIVE SCOREBOARD</div>
+    <h1 class="public-title">MATCH COMPLETE</h1>
+    <div class="completed-fixture" id="completedFixtureMeta"></div>
+
+    <div class="completed-scores">
+      <div class="completed-team">
+        <div class="completed-team-name" id="completedHomeTeam">LINDSELL CC</div>
+        <div class="completed-score" id="completedHomeScore">—</div>
+        <div class="completed-overs" id="completedHomeOvers"></div>
+      </div>
+
+      <div class="completed-v">v</div>
+
+      <div class="completed-team">
+        <div class="completed-team-name" id="completedAwayTeam">OPPOSITION CC</div>
+        <div class="completed-score" id="completedAwayScore">—</div>
+        <div class="completed-overs" id="completedAwayOvers"></div>
+      </div>
+    </div>
+
+    <div class="completed-result" id="completedResult">Result available</div>
+
+    <button class="public-button gold" id="scorecardButton" type="button">
+      VIEW FULL SCORECARD
+    </button>
   </div>
 </div>
 
@@ -1266,6 +1364,16 @@ const waitingLayer = document.getElementById("waitingLayer");
 const waitingHomeTeam = document.getElementById("waitingHomeTeam");
 const waitingAwayTeam = document.getElementById("waitingAwayTeam");
 const waitingMeta = document.getElementById("waitingMeta");
+const completedLayer = document.getElementById("completedLayer");
+const completedFixtureMeta = document.getElementById("completedFixtureMeta");
+const completedHomeTeam = document.getElementById("completedHomeTeam");
+const completedAwayTeam = document.getElementById("completedAwayTeam");
+const completedHomeScore = document.getElementById("completedHomeScore");
+const completedAwayScore = document.getElementById("completedAwayScore");
+const completedHomeOvers = document.getElementById("completedHomeOvers");
+const completedAwayOvers = document.getElementById("completedAwayOvers");
+const completedResult = document.getElementById("completedResult");
+const scorecardButton = document.getElementById("scorecardButton");
 const rotateLayer = document.getElementById("rotateLayer");
 const scoreboardRoot = document.getElementById("scoreboardRoot");
 const launchButton = document.getElementById("launchButton");
@@ -1274,6 +1382,8 @@ const playCricketButton = document.getElementById("playCricketButton");
 let liveAvailable = false;
 let viewerEnteredScoreboard = false;
 let lastLiveUpdatedAt = null;
+let lastPublicState = "standby";
+let lastPublicScore = null;
 
 function configReady(){
   return onlineCfg.supabaseUrl
@@ -1299,8 +1409,11 @@ function showStandby(){
   scoreboardRoot.hidden = true;
   launchLayer.hidden = true;
   waitingLayer.hidden = true;
+  completedLayer.hidden = true;
   rotateLayer.hidden = true;
   standbyLayer.hidden = false;
+  lastPublicState = "standby";
+  lastPublicScore = null;
 
   if(document.fullscreenElement && document.exitFullscreen){
     document.exitFullscreen().catch(()=>{});
@@ -1315,7 +1428,10 @@ function showWaiting(score){
   launchLayer.hidden = true;
   rotateLayer.hidden = true;
   standbyLayer.hidden = true;
+  completedLayer.hidden = true;
   waitingLayer.hidden = false;
+  lastPublicState = "waiting";
+  lastPublicScore = score;
 
   const home = score?.homeTeam || "LINDSELL CC";
   const away = score?.awayTeam || "OPPOSITION CC";
@@ -1332,10 +1448,51 @@ function showWaiting(score){
   }
 }
 
+
+function showCompleted(score){
+  liveAvailable = false;
+  viewerEnteredScoreboard = false;
+
+  scoreboardRoot.hidden = true;
+  launchLayer.hidden = true;
+  waitingLayer.hidden = true;
+  rotateLayer.hidden = true;
+  standbyLayer.hidden = true;
+  completedLayer.hidden = false;
+
+  completedHomeTeam.textContent = score?.homeTeam || "HOME";
+  completedAwayTeam.textContent = score?.awayTeam || "AWAY";
+  completedHomeScore.textContent = score?.homeScore || "—";
+  completedAwayScore.textContent = score?.awayScore || "—";
+  completedHomeOvers.textContent = score?.homeOvers ? `${score.homeOvers} OVERS` : "";
+  completedAwayOvers.textContent = score?.awayOvers ? `${score.awayOvers} OVERS` : "";
+  completedResult.textContent = score?.resultDescription || "Result available";
+
+  const bits = [];
+  if(score?.matchDate) bits.push(score.matchDate);
+  if(score?.matchTime) bits.push(score.matchTime);
+  completedFixtureMeta.textContent = bits.join(" • ");
+
+  scorecardButton.dataset.url =
+    score?.scorecardUrl ||
+    (score?.fixtureId
+      ? `https://lindsell.play-cricket.com/website/results/${score.fixtureId}`
+      : "");
+
+  lastPublicState = "completed";
+  lastPublicScore = score;
+
+  if(document.fullscreenElement && document.exitFullscreen){
+    document.exitFullscreen().catch(()=>{});
+  }
+}
+
 function showLiveReady(){
   liveAvailable = true;
   standbyLayer.hidden = true;
   waitingLayer.hidden = true;
+  completedLayer.hidden = true;
+  lastPublicState = "live";
 
   if(viewerEnteredScoreboard){
     scoreboardRoot.hidden = false;
@@ -1416,7 +1573,14 @@ async function fetchLiveScore(){
       return;
     }
 
+    if(state === "completed"){
+      lastLiveUpdatedAt = row.updated_at;
+      showCompleted(row.score);
+      return;
+    }
+
     window.SCORE = row.score;
+    lastPublicScore = row.score;
     lastLiveUpdatedAt = row.updated_at;
     render();
     showLiveReady();
@@ -1426,7 +1590,13 @@ async function fetchLiveScore(){
       Keep the last successful score until its four-hour freshness window expires.
     */
     if(lastLiveUpdatedAt && ageHours(lastLiveUpdatedAt) < Number(onlineCfg.staleAfterHours || 4)){
-      showLiveReady();
+      if(lastPublicState === "completed" && lastPublicScore){
+        showCompleted(lastPublicScore);
+      }else if(lastPublicState === "waiting" && lastPublicScore){
+        showWaiting(lastPublicScore);
+      }else{
+        showLiveReady();
+      }
     }else{
       showStandby();
     }
@@ -1436,6 +1606,10 @@ async function fetchLiveScore(){
 launchButton.addEventListener("click",enterScoreboard);
 playCricketButton.addEventListener("click",()=>{
   window.location.href = onlineCfg.playCricketUrl || "https://lindsell.play-cricket.com/";
+});
+scorecardButton.addEventListener("click",()=>{
+  const url = scorecardButton.dataset.url;
+  if(url) window.location.href = url;
 });
 window.addEventListener("resize",()=>{
   updateOrientationOverlay();
