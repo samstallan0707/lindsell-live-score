@@ -75,6 +75,52 @@ input{
 }
 input:focus{border-color:var(--green)}
 .error{color:#ff9b9b;font-size:13px;margin-top:10px;min-height:18px}
+
+.health-banner{
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:14px 16px;
+  margin:0 0 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  background:#08110c;
+}
+.health-left{
+  min-width:0;
+}
+.health-title{
+  font-size:11px;
+  color:var(--muted);
+  font-weight:900;
+  letter-spacing:.11em;
+  text-transform:uppercase;
+}
+.health-value{
+  margin-top:4px;
+  font-size:clamp(22px,6vw,34px);
+  font-weight:950;
+  line-height:1;
+}
+.health-detail{
+  margin-top:5px;
+  color:var(--muted);
+  font-size:12px;
+}
+.health-banner.good{
+  border-color:rgba(53,208,113,.35);
+  background:linear-gradient(145deg,rgba(3,156,67,.12),rgba(8,17,12,.95));
+}
+.health-banner.warn{
+  border-color:rgba(227,184,74,.40);
+  background:linear-gradient(145deg,rgba(227,184,74,.08),rgba(8,17,12,.95));
+}
+.health-banner.bad{
+  border-color:rgba(231,96,96,.45);
+  background:linear-gradient(145deg,rgba(231,96,96,.09),rgba(8,17,12,.95));
+}
+
 @media(max-width:620px){
   .wrap{padding:18px 12px 40px}
   .grid{grid-template-columns:1fr}
@@ -89,7 +135,7 @@ input:focus{border-color:var(--green)}
 <div class="wrap">
   <section id="lockScreen" class="lock">
     <div class="lockbox">
-      <div class="eyebrow">LINDSELL CC • v12.0</div>
+      <div class="eyebrow">LINDSELL CC • v12.1</div>
       <h2>Remote Status</h2>
       <div class="sub">
         Enter the private remote-status access key from the scoring PC.
@@ -111,12 +157,22 @@ input:focus{border-color:var(--green)}
         <h1>Broadcast Status</h1>
         <div class="sub" id="lastChecked">Checking…</div>
       </div>
-      <div class="version">v12.0</div>
+      <div class="version">v12.1</div>
     </header>
+
+
+    <section id="healthBanner" class="health-banner">
+      <div class="health-left">
+        <div class="health-title">Overall broadcast health</div>
+        <div id="healthValue" class="health-value">CHECKING…</div>
+        <div id="healthDetail" class="health-detail">Waiting for the latest heartbeat.</div>
+      </div>
+      <div id="healthBadge" class="badge"><span class="dot"></span><span>CHECKING</span></div>
+    </section>
 
     <section class="hero">
       <div class="hero-top">
-        <div class="hero-title">Home scoring PC</div>
+        <div class="hero-title" id="fixtureContextLabel">Active fixture</div>
         <div id="pcBadge" class="badge"><span class="dot"></span><span>CHECKING</span></div>
       </div>
       <div id="pcStatus" class="big-status">CHECKING…</div>
@@ -228,6 +284,61 @@ function setBadge(age){
   b.innerHTML=`<span class="dot"></span><span>${label}</span>`;
   text("pcStatus",label==="ONLINE"?"HOME PC ONLINE":label==="STALE"?"HEARTBEAT DELAYED":"HOME PC OFFLINE");
 }
+
+function setOverallHealth(level,title,detail){
+  const banner=el("healthBanner");
+  const badge=el("healthBadge");
+  banner.className=`health-banner ${level}`;
+  badge.className=`badge ${level}`;
+  const label=level==="good"?"HEALTHY":level==="warn"?"CHECK":"ATTENTION";
+  badge.innerHTML=`<span class="dot"></span><span>${label}</span>`;
+  text("healthValue",title);
+  text("healthDetail",detail);
+}
+
+function computeOverallHealth(s,heartbeatAge){
+  const localFeed=String(s.local_feed||"");
+  const desired=Boolean(s.recovery_armed);
+  const launcherAlive=Boolean(s.launcher_alive);
+  const websiteOn=Boolean(s.website_broadcast_enabled);
+  const launcherAge=ageSeconds(s.launcher_updated_at);
+  const bridgeAge=ageSeconds(s.bridge_last_update);
+
+  if(heartbeatAge===null || heartbeatAge>ONLINE_WARN_SECONDS){
+    return ["bad","ATTENTION REQUIRED","The home PC heartbeat is offline or too old."];
+  }
+
+  if(desired && !launcherAlive){
+    return ["bad","ATTENTION REQUIRED","A fixture is armed but the launcher is not currently running."];
+  }
+
+  if(localFeed==="recovering"){
+    return ["warn","RECOVERY IN PROGRESS","Auto Recovery is attempting to restore the local feed."];
+  }
+
+  if(localFeed==="running" && launcherAge!==null && launcherAge>120){
+    return ["warn","CHECK LAUNCHER","The PC is online but the launcher heartbeat is delayed."];
+  }
+
+  if(localFeed==="running" && s.score_state==="live" && bridgeAge!==null && bridgeAge>120){
+    return ["warn","CHECK LIVE FEED","The fixture is live but the bridge update is delayed."];
+  }
+
+  if(!desired && !websiteOn){
+    return ["good","SYSTEM READY","Home PC and recovery monitor are online. No fixture is armed."];
+  }
+
+  if(localFeed==="running" && websiteOn){
+    return ["good","EVERYTHING HEALTHY","Local feed, website broadcast and recovery protection are all active."];
+  }
+
+  if(localFeed==="running" && !websiteOn){
+    return ["good","LOCAL FEED HEALTHY","The local scoreboard is running. Website broadcast is deliberately off."];
+  }
+
+  return ["good","SYSTEM HEALTHY","Home PC heartbeat is current and no fault has been detected."];
+}
+
 function showDashboard(){
   lockScreen.classList.add("hidden");
   dashboard.classList.remove("hidden");
@@ -276,6 +387,8 @@ function render(payload){
 
   const home=s.homeTeam||"";
   const away=s.awayTeam||"";
+  const activeFixture=Boolean(s.recovery_armed);
+  text("fixtureContextLabel",activeFixture?"Active fixture":"Last selected fixture");
   text("fixture",(home&&away)?`${home} v ${away}`:"No fixture loaded");
 
   const meta=[];
@@ -308,12 +421,25 @@ function render(payload){
   text("sleep",s.sleep_prevention?"ACTIVE":"NOT CONFIRMED");
 
   text("launcherState",upper(s.launcher_state));
-  text("launcherAge",relativeAge(s.launcher_updated_at));
-  text("bridgeAge",relativeAge(s.bridge_last_update));
+
+  if(!s.recovery_armed && !s.launcher_alive){
+    text("launcherAge","Not running");
+  }else{
+    text("launcherAge",relativeAge(s.launcher_updated_at));
+  }
+
+  if(!s.recovery_armed && !s.launcher_alive && !s.bridge_last_update){
+    text("bridgeAge","Not running");
+  }else{
+    text("bridgeAge",relativeAge(s.bridge_last_update));
+  }
   text("bridgeMessage",s.bridge_message||"No bridge update yet");
   text("restartCount",s.recovery_restarts??0);
   text("pcName",s.pc_name||"—");
   text("fixtureId",s.fixture_id||"—");
+
+  const [healthLevel,healthTitle,healthDetail]=computeOverallHealth(s,hbAge);
+  setOverallHealth(healthLevel,healthTitle,healthDetail);
 
   const scoreCard=el("scoreCard");
   const score=s.score||{};
